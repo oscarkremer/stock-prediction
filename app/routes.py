@@ -1,21 +1,16 @@
-from flask import redirect
-from flask import render_template
-from flask import request
-from flask import url_for
-from flask_login import current_user
-from flask_login import login_required
-from flask_login import login_user
-from flask_login import logout_user
+KEY = 'TSHI91Q1K43R9H5M'
+from flask_login import current_user, login_required, login_user, logout_user
+from flask import render_template, url_for, flash, redirect, request, abort, send_file, make_response
 from werkzeug.urls import url_parse
 from app import app, db, bcrypt
 from app.forms import *
-from app.models import User
+from app.models import User, Stock
 from sqlalchemy import desc
 from time import sleep
 import requests, json, atexit, time
+from alpha_vantage.timeseries import TimeSeries
 
-
-@app.route('/')
+@app.route('/home')
 def index():
     return render_template("index.html", title='Home Page')
 
@@ -50,12 +45,6 @@ def create_symbol():
 
     return redirect(url_for('index'))
 
-from alpha_vantage.timeseries import TimeSeries
-
-KEY = 'TSHI91Q1K43R9H5M'
-
-from alpha_vantage.timeseries import TimeSeries
-import matplotlib.pyplot as plt
 
 @app.route("/company/new", methods=['GET', 'POST'])
 @login_required
@@ -63,18 +52,16 @@ def new_company():
     form = CompanyForm()
     if request.method == 'POST':
         if form.validate_on_submit():
-            company = Company(name=form.name.data, symbol = form.symbol.data)
-            db.session.add(company)
-            db.session.commit()
             try:
-                ts = TimeSeries(key=KEY, output_format='pandas')
-                data, meta_data = ts.get_intraday(symbol='MSFT',interval='1min', outputsize='full')
-                print(data)
+                TimeSeries(key=KEY, output_format='pandas').get_intraday(symbol=form.symbol.data.upper(),interval='1min')
+                company = Stock(stock_name=form.name.data, symbol = form.symbol.data)
+                db.session.add(company)
+                db.session.commit()
                 flash('A new company has been registered!', 'success')
-                return redirect(url_for('home'))
-            except:
-                flash('Error connecting to API, please verify SYMBOL', 'danger')
-                
+                return redirect(url_for('/home'))
+            except Exception as e:
+                print(e)
+                flash('Error connecting to API, please verify SYMBOL', 'danger')                
         else:
             flash('Error, please check the added information', 'danger')
     return render_template('create_company.html', title='New Company',

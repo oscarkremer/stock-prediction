@@ -20,6 +20,7 @@ class User(db.Model, UserMixin):
 
 class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    stock_name = db.Column(db.String(20), unique=True, nullable=False)
     symbol = db.Column(db.String(100), unique=True, nullable=False)
     analysis = db.relationship('Analysis', backref='company_author', lazy=True)
     image_file = db.Column(
@@ -32,7 +33,7 @@ class Stock(db.Model):
 class Analysis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
     opened = db.Column(db.Float, nullable=False, default=0)
     high = db.Column(db.Float, nullable=False, default=0)
     low = db.Column(db.Float, nullable=False, default=0)

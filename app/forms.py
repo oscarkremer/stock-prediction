@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField
-from wtforms import PasswordField
-from wtforms import StringField
-from wtforms import SubmitField
+from flask_wtf.file import FileField, FileAllowed
+from wtforms import BooleanField, PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from app import bcrypt
-from app.models import User
+from app.models import User, Stock
+
+
 
 class LoginForm(FlaskForm):
     email = StringField('Email',
@@ -21,6 +21,7 @@ class RegistrationForm(FlaskForm):
     email = StringField('Email',
                         validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=20)])
+
     confirm_password = PasswordField(
         'Confirm Password', validators=[
             DataRequired(), EqualTo('password')])
@@ -71,10 +72,13 @@ class CompanyForm(FlaskForm):
                            validators=[DataRequired(), Length(min=2, max=100)])
     symbol = StringField('Symbol',
                            validators=[DataRequired(), Length(min=2, max=100)])
+    picture = FileField('Update Profile Picture', validators=[
+                        FileAllowed(['jpg', 'png'])])
+
     submit = SubmitField('New Company')
   
     def validate_symbol(self, symbol):
-        company = Company.query.filter_by(name=symbol.data).first()
-        if company:
+        stock = Stock.query.filter_by(stock_name=symbol.data).first()
+        if stock:
             raise ValidationError(
                 'That Symbol is taken. Please choose a different one.')
