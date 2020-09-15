@@ -36,15 +36,49 @@ def login():
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
-
-
-
 @app.route('/logout/')
 @login_required
 def logout():
     logout_user()
 
     return redirect(url_for('index'))
+
+@app.route('/symbol/new')
+@login_required
+def create_symbol():
+    logout_user()
+
+    return redirect(url_for('index'))
+
+from alpha_vantage.timeseries import TimeSeries
+
+KEY = 'TSHI91Q1K43R9H5M'
+
+from alpha_vantage.timeseries import TimeSeries
+import matplotlib.pyplot as plt
+
+@app.route("/company/new", methods=['GET', 'POST'])
+@login_required
+def new_company():
+    form = CompanyForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            company = Company(name=form.name.data, symbol = form.symbol.data)
+            db.session.add(company)
+            db.session.commit()
+            try:
+                ts = TimeSeries(key=KEY, output_format='pandas')
+                data, meta_data = ts.get_intraday(symbol='MSFT',interval='1min', outputsize='full')
+                print(data)
+                flash('A new company has been registered!', 'success')
+                return redirect(url_for('home'))
+            except:
+                flash('Error connecting to API, please verify SYMBOL', 'danger')
+                
+        else:
+            flash('Error, please check the added information', 'danger')
+    return render_template('create_company.html', title='New Company',
+                           form=form, legend='New Company')
 
 
 @app.route('/register/', methods=['GET', 'POST'])

@@ -66,4 +66,15 @@ class AccountUpdateForm(FlaskForm):
                 raise ValidationError(
                     'That email is taken. Please choose a different one.')
 
-
+class CompanyForm(FlaskForm):
+    name = StringField('Company Name',
+                           validators=[DataRequired(), Length(min=2, max=100)])
+    symbol = StringField('Symbol',
+                           validators=[DataRequired(), Length(min=2, max=100)])
+    submit = SubmitField('New Company')
+  
+    def validate_symbol(self, symbol):
+        company = Company.query.filter_by(name=symbol.data).first()
+        if company:
+            raise ValidationError(
+                'That Symbol is taken. Please choose a different one.')
